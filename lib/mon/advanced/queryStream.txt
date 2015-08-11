@@ -1,0 +1,19 @@
+
+
+Query#stream([options])
+Returns a Node.js 0.8 style read stream interface.
+pm:[options] $O
+rets:<QueryStream>
+See:QueryStream
+// follows the nodejs 0.8 stream api
+Thing.find({ n: /^hello/ }).stream().pipe(res)
+// manual streaming
+stream = Thing.find({ n: /^hello/ }).stream();
+stream.on('data',function(dc){
+}).on('error', function (z) {
+}).on('close', function () {}) // the stream is closed
+Valid options
+transform: optional function which accepts a $mg dc. The return value of the function will be emitted on data.
+// JSON.stringify all dcs before emitting
+var stream = Thing.find().stream({ transform: JSON.stringify });
+stream.pipe(writeStream);

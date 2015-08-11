@@ -1,0 +1,50 @@
+  map fn: -!access  db -pure (no side effects.)
+ -responsible for transforming each input doc into zero or more docs.
+ -can access the variables defined in the scope parameter,
+
+ -ref cur doc  as THIS  w/i map fn
+ -function() {emit(k,v)}
+- may oly call emit(k,v) any num  times to create   output  doc assocg k/v's
+function() {if (this.sts == 'A'){emit(this.cust_id, 1)}} //call emit(key,value) 0 or 1 times
+function(){ _.e(this.items,function(d){emit(d.sku, 1) })// may call  emit(k,v) mult  times
+
+
+
+
+ reduce fn: -!access  db  -pure (no side effects.)
+-fn(k, values) { return result  }
+
+The reduce fn can access the vars defined in the scope parameter.
+
+
+ vals arg  is  arr  whose els are  val  obs that are “mapped” to the k.
+-MG wont call the reduce fn for  k w  only 1 val
+
+
+
+MG can invoke the reduce fn more than once for the same k.
+ In this case, the previous output
+  from the reduce fn for that k 
+  will become one of the input values
+   to the next reduce fn invocation for that k.
+Because it is possible to invoke the
+reduce fn more than once for the same k,
+ the following properties need to be true:
+the type of the return ob  must be identical to the type
+ of the value emitted by the map fn.
+the reduce fn must be associative.
+
+The following statement must be true:
+reduce(k, [ C, reduce(k, [ A, B ]) ] ) == reduce( k, [ C, A, B ] )
+
+the reduce fn must be idempotent. 
+Ensure that the following statement is true:
+
+reduce( k, [ reduce(k, valuesArray) ] ) ==
+reduce( k, valuesArray )
+
+the reduce fn should be commutative: that is,
+ the order of the els in the valuesArray 
+ should not affect the output of the reduce fn, 
+ so that the following statement is true:
+reduce( k, [ A, B ] ) == reduce( k, [ B, A ] )

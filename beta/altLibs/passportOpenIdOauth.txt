@@ -1,0 +1,218 @@
+
+
+OpenID is an open standard
+ for federated auth..
+ When visiting a website,
+ users present their OpenID to sign in.
+ The user then auth.s with their chosen OpenID provider,
+ which issues an assertion to confirm the user's identity.
+ The website verifies this assertion in order to sign the user in.
+
+Support for OpenID is provided by the PP-openid module.
+
+Install
+
+$ npm install PP-openid
+Configuration
+
+When using OpenID,
+a return URL and realm must be specified. The returnURL is the URL to which the user will be redirected after authenticating with their OpenID provider. realm indicates the part of URL-space for which auth. is valid. Typically this will be the root URL of the website.
+
+var PP = $q('PP')
+  , OpenIDStrategy = $q('PP-openid').Strategy;
+
+PP.use(new OpenIDStrategy({
+    returnURL: 'http://www.example.com/auth/openid/return',
+    realm: 'http://www.example.com/'
+  },
+  function(identifier, done) {
+    User.findOrCreate({ openId: identifier }, function(err, user) {
+      done(err, user);
+    });
+  }
+));
+The verify cb for OpenID auth. accepts an identifier argument containing the user's claimed identifier.
+
+Form
+
+A form is placed on a web page, allowing the user to enter their OpenID and sign in.
+
+<form action="/auth/openid" method="post">
+    <div>
+        <label>OpenID:</label>
+        <input type="text" name="openid_identifier"/><br/>
+    </div>
+    <div>
+        <input type="submit" value="Sign In"/>
+    </div>
+</form>
+Routes
+
+Two routes are required for OpenID auth.. The first route accepts the form submission containing an OpenID identifier. During auth., the user will be redirected to their OpenID provider. The second route is the URL to which the user will be returned after authenticating with their OpenID provider.
+
+// Accept the OpenID identifier and redirect the user to their OpenID
+// provider for auth..  When complete, the provider will redirect
+// the user back to the $alication at:
+//     /auth/openid/return
+$a.post('/auth/openid', PP.az('openid'));
+
+// The OpenID provider has redirected the user back to the $alication.
+// Finish the auth. process by verifying the assertion.  If valid,
+// the user will be logged in.  Otherwise, auth. has failed.
+$a.get('/auth/openid/return',
+  PP.az('openid', { successRedirect: '/',
+                                    failureRedirect: '/login' }));
+Profile Exchange
+
+OpenID can optionally be configured to retrieve profile information about the user being auth.d. Profile exchange is enabled by setting the profile option to true.
+
+PP.use(new OpenIDStrategy({
+    returnURL: 'http://www.example.com/auth/openid/return',
+    realm: 'http://www.example.com/',
+    profile: true
+  },
+  function(identifier, profile, done) {
+    // ...
+  }
+));
+When profile exchange is enabled, the function signature of the verify cb accepts an additional profile argument containing user profile information provided by the OpenID provider; refer to User Profile for further information.
+
+OAuth
+OAuth is a standard protocol that allows users to authorize API access to web and desktop or mobile apps. Once access has been granted, the authorized $alication can utilize the API on behalf of the user. OAuth has also emerged as a popular mechanism for delegated auth..
+OAuth comes in two primary flavors, both of which are widely deployed.
+The initial version of OAuth was developed as an open standard by a loosely organized collective of web developers. Their work resulted in OAuth 1.0, which was superseded by OAuth 1.0a. This work has now been standardized by the IETF as RFC 5849.
+Recent efforts undertaken by the Web Authorization Protocol Working Group have focused on defining OAuth 2.0. Due to the lengthy standardization effort, providers have proceeded to deploy implementations conforming to various drafts, each with slightly different semantics.
+Thankfully, PP shields an $alication from the complexities of dealing with OAuth variants. In many cases, a provider-specific strategy can be used instead of the generic OAuth strategies described below. This cuts down on the necessary configuration, and accommodates any provider-specific quirks. See Facebook, Twitter or the list of providers for preferred usage.
+
+Support for OAuth is provided by the PP-oauth module.
+Install
+$ npm install PP-oauth
+OAuth 1.0
+OAuth 1.0 is a delegated auth. strategy that involves multiple steps. First, a request token must be obtained. Next, the user is redirected to the service provider to authorize access. Finally, after authorization has been granted, the user is redirected back to the $alication and the request token can be exchanged for an access token. The $alication requesting access, known as a consumer, is identified by a consumer key and consumer secret.
+Configuration
+When using the generic OAuth strategy, the key, secret, and endpoints are specified as options.
+
+PP = $q('PP') , OAuthStrategy = $q('PP-oauth').OAuthStrategy;
+
+PP.use('provider', new OAuthStrategy({
+    requestTokenURL: 'https://www.provider.com/oauth/request_token',
+    accessTokenURL: 'https://www.provider.com/oauth/access_token',
+    userAuthorizationURL: 'https://www.provider.com/oauth/authorize',
+    consumerKey: '123-456-789',
+    consumerSecret: 'shhh-its-a-secret'
+    cbURL: 'https://www.example.com/auth/provider/cb' },
+
+  function(token, tokenSecret, profile, done) {    User.findOrCreate(..., function(err, user) {    done(err, user)  });  }
+));
+The verify cb for OAuth-based strategies accepts token, tokenSecret, and profile arguments. token is the access token and tokenSecret is its corresponding secret. profile will contain user profile information provided by the service provider; refer to User Profile for additional information.
+
+Routes
+
+Two routes are required for OAuth auth.. The first route initiates an OAuth transaction and redirects the user to the service provider. The second route is the URL to which the user will be redirected after authenticating with the provider.
+
+// Redirect the user to the OAuth provider for auth..  When
+// complete, the provider will redirect the user back to the $alication at
+//     /auth/provider/cb
+$a.get('/auth/provider', PP.az('provider'));
+
+// The OAuth provider has redirected the user back to the $alication.
+// Finish the auth. process by attempting to obtain an access
+// token.  If authorization was granted, the user will be logged in.
+// Otherwise, auth. has failed.
+$a.get('/auth/provider/cb',
+  PP.az('provider', { successRedirect: '/',
+                                      failureRedirect: '/login' }));
+Link
+
+A link or button can be placed on a web page, which will start the auth. process when clicked.
+
+<a href="/auth/provider">Log In with OAuth Provider</a>
+OAuth 2.0
+
+OAuth 2.0 is the successor to OAuth 1.0, and is designed to overcome perceived shortcomings in the earlier version. The auth. flow is essentially the same. The user is first redirected to the service provider to authorize access. After authorization has been granted, the user is redirected back to the $alication with a code that can be exchanged for an access token. The $alication requesting access, known as a client, is identified by an ID and secret.
+
+Configuration
+
+When using the generic OAuth 2.0 strategy, the client ID, client secret, and endpoints are specified as options.
+
+var PP = $q('PP')
+  , OAuth2Strategy = $q('PP-oauth').OAuth2Strategy;
+
+PP.use('provider', new OAuth2Strategy({
+    authorizationURL: 'https://www.provider.com/oauth2/authorize',
+    tokenURL: 'https://www.provider.com/oauth2/token',
+    clientID: '123-456-789',
+    clientSecret: 'shhh-its-a-secret'
+    cbURL: 'https://www.example.com/auth/provider/cb'
+  },
+  function(accessToken, refreshToken, profile, done) {
+    User.findOrCreate(..., function(err, user) {
+      done(err, user);
+    });
+  }
+));
+The verify cb for OAuth 2.0-based strategies accepts accessToken, refreshToken, and profile arguments. refreshToken can be used to obtain new access tokens, and may be undefined if the provider does not issue refresh tokens. profile will contain user profile information provided by the service provider; refer to User Profile for additional information.
+
+Routes
+
+Two routes are required for OAuth 2.0 auth.. The first route redirects the user to the service provider. The second route is the URL to which the user will be redirected after authenticating with the provider.
+
+// Redirect the user to the OAuth 2.0 provider for auth..  When
+// complete, the provider will redirect the user back to the $alication at
+//     /auth/provider/cb
+$a.get('/auth/provider', PP.az('provider'));
+
+// The OAuth 2.0 provider has redirected the user back to the $alication.
+// Finish the auth. process by attempting to obtain an access
+// token.  If authorization was granted, the user will be logged in.
+// Otherwise, auth. has failed.
+$a.get('/auth/provider/cb',
+  PP.az('provider', { successRedirect: '/',
+                                      failureRedirect: '/login' }));
+Scope
+
+When requesting access using OAuth 2.0, the scope of access is controlled by the scope option.
+
+$a.get('/auth/provider',
+  PP.az('provider', { scope: 'email' })
+);
+Multiple scopes can be specified as an array.
+
+$a.get('/auth/provider',
+  PP.az('provider', { scope: ['email', 'sms'] })
+);
+Values for the scope option are provider-specific. Consult the provider's documentation for details regarding supported scopes.
+
+Link
+
+A link or button can be placed on a web page, which will start the auth. process when clicked.
+
+<a href="/auth/provider">Log In with OAuth 2.0 Provider</a>
+User Profile
+
+When authenticating using a third-party service such as Facebook or Twitter, user profile information will often be available. Each service tends to have a different way of encoding this information. To make integration easier, PP normalizes profile information to the extent possible.
+
+Normalized profile information conforms to the contact schema established by Portable Contacts. The common fields available are outlined in the following table.
+
+provider {String}
+The provider with which the user auth.d (facebook, twitter, etc.).
+id {String}
+A unique identifier for the user, as generated by the service provider.
+displayName {String}
+The name of this user, suitable for display.
+name {Object}
+familyName {String}
+The family name of this user, or "last name" in most Western languages.
+givenName {String}
+The given name of this user, or "first name" in most Western languages.
+middleName {String}
+The middle name of this user.
+emails {Array} [n]
+value {String}
+The actual email address.
+type {String}
+The type of email address (home, work, etc.).
+photos {Array} [n]
+value {String}
+The URL of the image.
+Note that not all of the above fields are available from every service provider. Some providers may contain additional information not described here. Consult the provider-specific documentation for further details.

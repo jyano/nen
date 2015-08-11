@@ -1,0 +1,497 @@
+
+Facebook
+
+The Facebook strategy allows users to log in to a web application using their Facebook account. Internally, Facebook authentication works using OAuth 2.0.
+
+Support for Facebook is implemented by the passport-facebook module.
+
+Install
+
+$ npm install passport-facebook
+Configuration
+
+In order to use Facebook authentication, you must first create an app at Facebook Developers. When created, an app is assigned an App ID and App Secret. Your application must also implement a redirect URL, to which Facebook will redirect users after they have approved access for your application.
+
+var passport = require('passport')
+  , FacebookStrategy = require('passport-facebook').Strategy;
+
+passport.use(new FacebookStrategy({
+    clientID: FACEBOOK_APP_ID,
+    clientSecret: FACEBOOK_APP_SECRET,
+    callbackURL: "http://www.example.com/auth/facebook/callback"
+  },
+  function(accessToken, refreshToken, profile, done) {
+    User.findOrCreate(..., function(err, user) {
+      if (err) { return done(err); }
+      done(null, user);
+    });
+  }
+));
+The verify callback for Facebook authentication accepts accessToken, refreshToken, and profile arguments. profile will contain user profile information provided by Facebook; refer to User Profile for additional information.
+
+Note: For security reasons, the redirection URL must reside on the same host that is registered with Facebook.
+
+Routes
+
+Two routes are required for Facebook authentication. The first route redirects the user to Facebook. The second route is the URL to which Facebook will redirect the user after they have logged in.
+
+// Redirect the user to Facebook for authentication.  When complete,
+// Facebook will redirect the user back to the application at
+//     /auth/facebook/callback
+app.get('/auth/facebook', passport.authenticate('facebook'));
+
+// Facebook will redirect the user to this URL after approval.  Finish the
+// authentication process by attempting to obtain an access token.  If
+// access was granted, the user will be logged in.  Otherwise,
+// authentication has failed.
+app.get('/auth/facebook/callback',
+  passport.authenticate('facebook', { successRedirect: '/',
+                                      failureRedirect: '/login' }));
+Note that the URL of the callback route matches that of the callbackURL option specified when configuring the strategy.
+
+Permissions
+
+If your application needs extended permissions, they can be requested by setting the scope option.
+
+app.get('/auth/facebook',
+  passport.authenticate('facebook', { scope: 'read_stream' })
+);
+Multiple permissions can be specified as an array.
+
+app.get('/auth/facebook',
+  passport.authenticate('facebook', { scope: ['read_stream', 'publish_actions'] })
+);
+Link
+A link or button can be placed on a web page, allowing one-click login with Facebook.
+<a href="/auth/facebook">Login with Facebook</a>
+
+
+
+//////////////////////////////////////////////
+Twitter
+
+The Twitter strategy allows users to sign in to a web application using their Twitter account. Internally, Twitter authentication works using OAuth 1.0a.
+
+Support for Twitter is implemented by the passport-twitter module.
+
+Install
+
+$ npm install passport-twitter
+Configuration
+
+In order to use Twitter authentication, you must first create an application at Twitter Developers. When created, an application is assigned a consumer key and consumer secret. Your application must also implement a callback URL, to which Twitter will redirect users after they have approved access for your application.
+
+var passport = require('passport')
+  , TwitterStrategy = require('passport-twitter').Strategy;
+
+passport.use(new TwitterStrategy({
+    consumerKey: TWITTER_CONSUMER_KEY,
+    consumerSecret: TWITTER_CONSUMER_SECRET,
+    callbackURL: "http://www.example.com/auth/twitter/callback"
+  },
+  function(token, tokenSecret, profile, done) {
+    User.findOrCreate(..., function(err, user) {
+      if (err) { return done(err); }
+      done(null, user);
+    });
+  }
+));
+The verify callback for Twitter authentication accepts token, tokenSecret, and profile arguments. profile will contain user profile information provided by Twitter; refer to User Profile for additional information.
+
+Routes
+
+Two routes are required for Twitter authentication. The first route initiates an OAuth transaction and redirects the user to Twitter. The second route is the URL to which Twitter will redirect the user after they have signed in.
+
+// Redirect the user to Twitter for authentication.  When complete, Twitter
+// will redirect the user back to the application at
+//   /auth/twitter/callback
+app.get('/auth/twitter', passport.authenticate('twitter'));
+
+// Twitter will redirect the user to this URL after approval.  Finish the
+// authentication process by attempting to obtain an access token.  If
+// access was granted, the user will be logged in.  Otherwise,
+// authentication has failed.
+app.get('/auth/twitter/callback',
+  passport.authenticate('twitter', { successRedirect: '/',
+                                     failureRedirect: '/login' }));
+Note that the URL of the callback route matches that of the callbackURL option specified when configuring the strategy.
+
+Link
+
+A link or button can be placed on a web page, allowing one-click sign in with Twitter.
+
+<a href="/auth/twitter">Sign in with Twitter</a>
+
+
+Google//////////////////////////////////
+
+The Google strategy allows users to sign in to a web application using their Google account. Internally, Google authentication works using OpenID.
+
+Using this strategy directly, as opposed to the general-purpose OpenID strategy, allows a site to offer one-click sign in. The user does not have to enter an identifier, which improves usability, albeit at the expense of limiting choice of provider.
+
+Support for Google is implemented by the passport-google module.
+
+Install
+
+$ npm install passport-google
+Configuration
+
+When using Google for sign in, your application must implement a return URL, to which Google will redirect users after they have authenticated. The realm indicates the part of URL-space for which authentication is valid. Typically this will be the root URL of your website.
+
+var passport = require('passport')
+  , GoogleStrategy = require('passport-google').Strategy;
+
+passport.use(new GoogleStrategy({
+    returnURL: 'http://www.example.com/auth/google/return',
+    realm: 'http://www.example.com/'
+  },
+  function(identifier, profile, done) {
+    User.findOrCreate({ openId: identifier }, function(err, user) {
+      done(err, user);
+    });
+  }
+));
+The verify callback for Google authentication accepts identifier and profile arguments. profile will contain user profile information provided by Google; refer to User Profile for additional information.
+
+Routes
+
+Two routes are required for Google authentication. The first route redirects the user to Google. The second route is the URL to which Google will return the user after they have signed in.
+
+// Redirect the user to Google for authentication.  When complete, Google
+// will redirect the user back to the application at
+//     /auth/google/return
+app.get('/auth/google', passport.authenticate('google'));
+
+// Google will redirect the user to this URL after authentication.  Finish
+// the process by verifying the assertion.  If valid, the user will be
+// logged in.  Otherwise, authentication has failed.
+app.get('/auth/google/return',
+  passport.authenticate('google', { successRedirect: '/',
+                                    failureRedirect: '/login' }));
+Note that the URL of the return route matches that of the returnURL option specified when configuring the strategy.
+
+Link
+
+A link or button can be placed on a web page, allowing one-click sign in with Google.
+
+<a href="/auth/google">Sign In with Google</a>
+Basic & Digest
+
+Along with defining HTTP's authentication framework, RFC 2617 also defined the Basic and Digest authentications schemes. These two schemes both use usernames and passwords as credentials to authenticate users, and are often used to protect API endpoints.
+
+It should be noted that relying on username and password creditials can have adverse security impacts, especially in scenarios where there is not a high degree of trust between the server and client. In these situations, it is recommended to use an authorization framework such as OAuth 2.0.
+
+Support for Basic and Digest schemes is provided by the passport-http module.
+
+Install
+
+$ npm install passport-http
+Basic
+
+The Basic scheme uses a username and password to authenticate a user. These credentials are transported in plain text, so it is advised to use HTTPS when implementing this scheme.
+
+Configuration
+
+passport.use(new BasicStrategy(
+  function(username, password, done) {
+    User.findOne({ username: username }, function (err, user) {
+      if (err) { return done(err); }
+      if (!user) { return done(null, false); }
+      if (!user.validPassword(password)) { return done(null, false); }
+      return done(null, user);
+    });
+  }
+));
+The verify callback for Basic authentication accepts username and password arguments.
+
+Protect Endpoints
+
+app.get('/api/me',
+  passport.authenticate('basic', { session: false }),
+  function(req, res) {
+    res.json(req.user);
+  });
+Specify passport.authenticate() with the basic strategy to protect API endpoints. Sessions are not typically needed by APIs, so they can be disabled.
+
+Digest////////////////////////
+
+The Digest scheme uses a username and password to authenticate a user. Its primary benefit over Basic is that it uses a challenge-response paradigm to avoid sending the password in the clear.
+
+Configuration
+
+passport.use(new DigestStrategy({ qop: 'auth' },
+  function(username, done) {
+    User.findOne({ username: username }, function (err, user) {
+      if (err) { return done(err); }
+      if (!user) { return done(null, false); }
+      return done(null, user, user.password);
+    });
+  },
+  function(params, done) {
+    // validate nonces as necessary
+    done(null, true)
+  }
+));
+The Digest strategy utilizes two callbacks, the second of which is optional.
+
+The first callback, known as the "secret callback" accepts the username and calls done supplying a user and the corresponding secret password. The password is used to compute a hash, and authentication fails if it does not match that contained in the request.
+
+The second "validate callback" accepts nonce related params, which can be checked to avoid replay attacks.
+
+Protect Endpoints
+
+app.get('/api/me',
+  passport.authenticate('digest', { session: false }),
+  function(req, res) {
+    res.json(req.user);
+  });
+Specify passport.authenticate() with the digest strategy to protect API endpoints. Sessions are not typically needed by APIs, so they can be disabled.
+
+OAuth
+
+OAuth (formally specified by RFC 5849) provides a means for users to grant third-party applications access to their data without exposing their password to those applications.
+
+The protocol greatly improves the security of web applications, in particular, and OAuth has been important in bringing attention to the potential dangers of exposing passwords to external services.
+
+While OAuth 1.0 is still widely used, it has been superseded by OAuth 2.0. It is recommended to base new implementations on OAuth 2.0.
+
+When using OAuth to protect API endpoints, there are three distinct steps that that must be performed:
+
+The application requests permission from the user for access to protected resources.
+A token is issued to the application, if permission is granted by the user.
+The application authenticates using the token to access protected resources.
+Issuing Tokens
+
+OAuthorize, a sibling project to Passport, provides a toolkit for implementing OAuth service providers.
+
+The authorization process is a complex sequence that involves authenticating both the requesting application and the user, as well as prompting the user for permission, ensuring that enough detail is provided for the user to make an informed decision.
+
+Additionally, it is up to the implementor to determine what limits can be placed on the application regarding scope of access, as well as subsequently enforcing those limits.
+
+As a toolkit, OAuthorize does not attempt to make implementation decisions. This guide does not cover these issues, but does highly recommend that services deploying OAuth have a complete understanding of the security considerations involved.
+
+Authenticating Tokens
+
+Once issued, OAuth tokens can be authenticated using the passport-http-oauth module.
+
+Install
+
+$ npm install passport-http-oauth
+Configuration
+
+passport.use('token', new TokenStrategy(
+  function(consumerKey, done) {
+    Consumer.findOne({ key: consumerKey }, function (err, consumer) {
+      if (err) { return done(err); }
+      if (!consumer) { return done(null, false); }
+      return done(null, consumer, consumer.secret);
+    });
+  },
+  function(accessToken, done) {
+    AccessToken.findOne({ token: accessToken }, function (err, token) {
+      if (err) { return done(err); }
+      if (!token) { return done(null, false); }
+      Users.findById(token.userId, function(err, user) {
+        if (err) { return done(err); }
+        if (!user) { return done(null, false); }
+        // fourth argument is optional info.  typically used to pass
+        // details needed to authorize the request (ex: `scope`)
+        return done(null, user, token.secret, { scope: token.scope });
+      });
+    });
+  },
+  function(timestamp, nonce, done) {
+    // validate the timestamp and nonce as necessary
+    done(null, true)
+  }
+));
+In contrast to other strategies, there are two callbacks required by OAuth. In OAuth, both an identifier for the requesting application and the user-specific token are encoded as credentials.
+
+The first callback is known as the "consumer callback", and is used to find the application making the request, including the secret assigned to it. The second callback is the "token callback", which is used to indentify the user as well as the token's corresponding secret. The secrets supplied by the consumer and token callbacks are used to compute a signature, and authentication fails if it does not match the request signature.
+
+A final "validate callback" is optional, which can be used to prevent replay attacks by checking the timestamp and nonce used in the request.
+
+Protect Endpoints
+
+app.get('/api/me',
+  passport.authenticate('token', { session: false }),
+  function(req, res) {
+    res.json(req.user);
+  });
+Specify passport.authenticate() with the token strategy to protect API endpoints. Sessions are not typically needed by APIs, so they can be disabled.
+
+OAuth 2.0
+
+OAuth 2.0 (formally specified by RFC 6749) provides an authorization framework which allows users to authorize access to third-party applications. When authorized, the application is issued a token to use as an authentication credential. This has two primary security benefits:
+
+The application does not need to store the user's username and password.
+The token can have a restricted scope (for example: read-only access).
+These benefits are particularly important for ensuring the security of web applications, making OAuth 2.0 the predominant standard for API authentication.
+
+When using OAuth 2.0 to protect API endpoints, there are three distinct steps that must be performed:
+
+The application requests permission from the user for access to protected resources.
+A token is issued to the application, if permission is granted by the user.
+The application authenticates using the token to access protected resources.
+Issuing Tokens
+
+OAuth2orize, a sibling project to Passport, provides a toolkit for implementing OAuth 2.0 authorization servers.
+
+The authorization process is a complex sequence that involves authenticating both the requesting application and the user, as well as prompting the user for permission, ensuring that enough detail is provided for the user to make an informed decision.
+
+Additionally, it is up to the implementor to determine what limits can be placed on the application regarding scope of access, as well as subsequently enforcing those limits.
+
+As a toolkit, OAuth2orize does not attempt to make implementation decisions. This guide does not cover these issues, but does highly recommend that services deploying OAuth 2.0 have a complete understanding of the security considerations involved.
+
+Authenticating Tokens
+
+OAuth 2.0 provides a framework, in which an arbitrarily extensible set of token types can be issued. In practice, only specific token types have gained widespread use.
+
+Bearer Tokens
+
+Bearer tokens are the most widely issued type of token in OAuth 2.0. So much so, in fact, that many implementations assume that bearer tokens are the only type of token issued.
+
+Bearer tokens can be authenticated using the passport-http-bearer module.
+
+Install
+
+$ npm install passport-http-bearer
+Configuration
+
+passport.use(new BearerStrategy(
+  function(token, done) {
+    User.findOne({ token: token }, function (err, user) {
+      if (err) { return done(err); }
+      if (!user) { return done(null, false); }
+      return done(null, user, { scope: 'read' });
+    });
+  }
+));
+The verify callback for bearer tokens accepts the token as an argument. When invoking done, optional info can be passed, which will be set by Passport at req.authInfo. This is typically used to convey the scope of the token, and can be used when making access control checks.
+
+Protect Endpoints
+
+app.get('/api/me',
+  passport.authenticate('bearer', { session: false }),
+  function(req, res) {
+    res.json(req.user);
+  });
+Specify passport.authenticate() with the bearer strategy to protect API endpoints. Sessions are not typically needed by APIs, so they can be disabled.
+
+API Schemes
+
+The following is a list of strategies that implement authentication schemes used when protecting API endpoints.
+
+Scheme	Specification	Developer
+Anonymous	N/A	Jared Hanson
+Bearer	RFC 6750	Jared Hanson
+Basic	RFC 2617	Jared Hanson
+Digest	RFC 2617	Jared Hanson
+Hash	N/A	Yuri Karadzhov
+Hawk	hueniverse/hawk	José F. Romaniello
+Local API Key	N/A	Sudhakar Mani
+OAuth	RFC 5849	Jared Hanson
+OAuth 2.0 Client Password	RFC 6749	Jared Hanson
+OAuth 2.0 JWT Client Assertion	draft-jones-oauth-jwt-bearer	xTuple
+OAuth 2.0 Public Client	RFC 6749	Tim Shadel
+Log In
+
+Passport exposes a login() function on req (also aliased as logIn()) that can be used to establish a login session.
+
+req.login(user, function(err) {
+  if (err) { return next(err); }
+  return res.redirect('/users/' + req.user.username);
+});
+When the login operation completes, user will be assigned to req.user.
+
+Note: passport.authenticate() middleware invokes req.login() automatically. This function is primarily used when users sign up, during which req.login() can be invoked to automatically log in the newly registered user.
+
+Log Out
+
+Passport exposes a logout() function on req (also aliased as logOut()) that can be called from any route handler which needs to terminate a login session. Invoking logout() will remove the req.user property and clear the login session (if any).
+
+app.get('/logout', function(req, res){
+  req.logout();
+  res.redirect('/');
+});
+Authorize
+
+An application may need to incorporate information from multiple third-party services. In this case, the application will request the user to "connect", for example, both their Facebook and Twitter accounts.
+
+When this occurs, a user will already be authenticated with the application, and any subsequent third-party accounts merely need to be authorized and associated with the user. Because authentication and authorization in this situation are similar, Passport provides a means to accommodate both.
+
+Authorization is performed by calling passport.authorize(). If authorization is granted, the result provided by the strategy's verify callback will be assigned to req.account. The existing login session and req.user will be unaffected.
+
+app.get('/connect/twitter',
+  passport.authorize('twitter-authz', { failureRedirect: '/account' })
+);
+
+app.get('/connect/twitter/callback',
+  passport.authorize('twitter-authz', { failureRedirect: '/account' }),
+  function(req, res) {
+    var user = req.user;
+    var account = req.account;
+
+    // Associate the Twitter account with the logged-in user.
+    account.userId = user.id;
+    account.save(function(err) {
+      if (err) { return self.error(err); }
+      self.redirect('/');
+    });
+  }
+);
+In the callback route, you can see the use of both req.user and req.account. The newly connected account is associated with the logged-in user and saved to the database.
+
+Configuration
+
+Strategies used for authorization are the same as those used for authentication. However, an application may want to offer both authentication and authorization with the same third-party service. In this case, a named strategy can be used, by overriding the strategy's default name in the call to use().
+
+passport.use('twitter-authz', new TwitterStrategy({
+    consumerKey: TWITTER_CONSUMER_KEY,
+    consumerSecret: TWITTER_CONSUMER_SECRET,
+    callbackURL: "http://www.example.com/connect/twitter/callback"
+  },
+  function(token, tokenSecret, profile, done) {
+    Account.findOne({ domain: 'twitter.com', uid: profile.id }, function(err, account) {
+      if (err) { return done(err); }
+      if (account) { return done(null, account); }
+
+      var account = new Account();
+      account.domain = 'twitter.com';
+      account.uid = profile.id;
+      var t = { kind: 'oauth', token: token, attributes: { tokenSecret: tokenSecret } };
+      account.tokens.push(t);
+      return done(null, account);
+    });
+  }
+));
+In the above example, you can see that the twitter-authz strategy is finding or creating an Account instance to store Twitter account information. The result will be assigned to req.account, allowing the route handler to associate the account with the authenticated user.
+
+Association in Verify Callback
+
+One downside to the approach described above is that it requires two instances of the same strategy and supporting routes.
+
+To avoid this, set the strategy's passReqToCallback option to true. With this option enabled, req will be passed as the first argument to the verify callback.
+
+passport.use(new TwitterStrategy({
+    consumerKey: TWITTER_CONSUMER_KEY,
+    consumerSecret: TWITTER_CONSUMER_SECRET,
+    callbackURL: "http://www.example.com/auth/twitter/callback",
+    passReqToCallback: true
+  },
+  function(req, token, tokenSecret, profile, done) {
+    if (!req.user) {
+      // Not logged-in. Authenticate based on Twitter account.
+    } else {
+      // Logged in. Associate Twitter account with user.  Preserve the login
+      // state by supplying the existing user after association.
+      // return done(null, req.user);
+    }
+  }
+));
+With req passed as an argument,
+the verify callback can use the state of the request to tailor
+the authentication process, handling both authentication and authorization
+using a single strategy instance and set of routes. For example, if a user is already logged in,
+ the newly "connected" account can be associated. Any additional application-specific properties set on req,
+  including req.session, can be used as well.

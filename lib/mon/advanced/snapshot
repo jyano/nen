@@ -1,0 +1,26 @@
+$snapshot
+
+  prevents  cur  from returning a doc  more than once  ( bc  intervening wr  oper  moves  the doc)
+traverses  _id fd ix
+cannot be used with sharded collections.
+ not to be used   with $hint or $orderby
+ can achieve $snapshot isolation behavior  using any unique index on invariable fields.
+
+
+Even in snapshot mode,
+obs inserted or deleted during the lifetime of   cu  may or may not be returned.
+
+
+
+db.cl.f().snapshot()
+
+
+db.cl.f()._addSpecial( "$snapshot", true )
+
+
+db.cl.f()({
+    $query:{},
+    $snapshot:true
+})
+
+

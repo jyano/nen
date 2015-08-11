@@ -1,0 +1,261 @@
+
+
+
+Query#read(pref, [tags])   Dets MG nodes from which to read.
+pm: pref $S one of the listed pref ops or aliases
+[tags] $A opl tags for this query
+rets:$Qu this    See:mongodbdriver
+Preferences:
+primary - (default) Read from primary only.
+Operations will produce an error if primary is unavailable.
+Cannot be combined with tags.
+secondary
+Read from secondary if available,
+otherwise error.
+primaryPreferred
+Read from primary if available,
+ otherwise a secondary.
+secondaryPreferred
+Read from a secondary if available,
+ otherwise read from the primary.
+nearest
+All operations read from among the nearest candidates,
+but unlike other modes, this option will include both the primary
+and all secondaries in the random selection.
+$Qu().r('primary')//p
+$Qu().r('primaryPreferred')//pp
+$Qu().r('secondary')//s
+$Qu().r('secondaryPreferred')//sp
+$Qu().r('nearest')//n
+ // read from secondaries with matching tags
+new Query().read('s', [{ dc:'sf', s: 1 },{ dc:'ma', s: 2 }])
+Read more about how to use read preferrences here and here.
+
+/////////////////////////
+
+
+Query#geometry(object)
+
+Specs a $geometry condition
+
+pm:
+
+object <Object> Must contain a `type` property which is a String and a `coordinates` property which is an Array. See the examples.
+rets:
+
+<Query> this
+
+$geometry
+http://docs.mongodb.org/manual/release-notes/2.4/#new-geospatial-indexes-with-geojson-and-improved-spherical-geometry
+http://www.mongodb.org/display/DOCS/Geospatial+Indexing
+Example
+
+var polyA = [[[ 10, 20 ], [ 10, 40 ], [ 30, 40 ], [ 30, 20 ]]]
+query.where('loc').within().geometry({ type: 'Polygon', coordinates: polyA })
+
+// or
+var polyB = [[ 0, 0 ], [ 1, 1 ]]
+query.where('loc').within().geometry({ type: 'LineString', coordinates: polyB })
+
+// or
+var polyC = [ 0, 0 ]
+query.where('loc').within().geometry({ type: 'Point', coordinates: polyC })
+
+// or
+query.where('loc').intersects().geometry({ type: 'Point', coordinates: polyC })
+The argument is assigned to the most recent path passed to where().
+
+NOTE:
+
+geometry() must come after either intersects() or within().
+
+The object argument must contain type and coordinates properties.
+- type {String}
+- coordinates {Array}
+
+
+Query#intersects([arg])
+Declares an intersects query for geometry().
+Parameters:[arg] <Object>
+Returns:<Query> this
+See:$geometry
+geoIntersects
+query.where('path').intersects().geometry({
+    type: 'LineString'
+  , coordinates: [[180.0, 11.0], [180, 9.0]]
+})
+
+query.where('path').intersects({
+    type: 'LineString'
+  , coordinates: [[180.0, 11.0], [180, 9.0]]
+})
+MUST be used after where().
+
+
+
+
+Query#within()
+Defines a $within or $geoWithin arg
+ for geo-spatial queries.
+Returns:<Query> thisSee:$polygon$box$geometry$center$centerSphere
+query.where(path).within().box()
+query.where(path).within().circle()
+query.where(path).within().geometry()
+
+query.where('loc').within({ center: [50,50], radius: 10, unique: true, spherical: true });
+query.where('loc').within({ box: [[40.73, -73.9], [40.7, -73.988]] });
+query.where('loc').within({ polygon: [[],[],[],[]] });
+
+query.where('loc').within([], [], []) // polygon
+query.where('loc').within([], []) // box
+query.where('loc').within({ type: 'LineString', coordinates: [...] }); // geometry
+MUST be used after where().
+
+ $geoWithin always used for queries.
+ To change this behavior,
+  see Query.use$geoWithin.
+
+
+Flag to opt out of using $geoWithin.
+mongoose.Query.use$geoWithin = false;
+MongoDB 2.4 deprecated the use of $within,
+replacing it with $geoWithin.
+Mongoose uses $geoWithin by default
+ (which is 100% backward compatible with $within).
+ If you are running an older version of MongoDB,
+ set this flag to false so your
+ within() queries continue to work.
+
+
+
+
+
+Query#polygon([path], [coordinatePairs...])
+Specs$polygon condition
+Parameters:[path] <String, Array>
+[coordinatePairs...] <Array, Object>
+Returns:<Query> this
+See:$polygon
+query.where('loc').within().polygon([10,20], [13, 25], [7,15])
+query.polygon('loc', [10,20], [13, 25], [7,15])
+
+
+
+Query#box(val, Upper)
+Specs a $box condition
+Pams:val <Object>Upper <[Array]> Right Coords
+Returns:<Query> this
+See:$box
+within() Query#within
+var lowerLeft = [40.73083, -73.99756]
+var upperRight= [40.741404,  -73.988135]
+query.where('loc').within().box(lowerLeft, upperRight)
+query.box({ ll : lowerLeft, ur : upperRight })
+Query#cast(model, [obj])
+
+Casts this query to the schema of model
+
+Parameters:
+
+model <Md>
+[obj] <Object>
+Returns:
+
+<Object>
+Note
+
+If obj is present, it is cast instead of this query.
+
+show code
+Query#center()
+
+DEPRECATED Alias for circle
+
+Deprecated. Use circle instead.
+
+Query#centerSphere([path], val)
+
+DEPRECATED Specs a $centerSphere condition
+
+Parameters:
+
+[path] <String>
+val <Object>
+Returns:
+
+<Query> this
+See:
+
+http://www.mongodb.org/display/DOCS/Geospatial+Indexing
+$centerSphere
+Deprecated. Use circle instead.
+
+Example
+
+var area = { center: [50, 50], radius: 10 };
+query.where('loc').within().centerSphere(area);
+show code
+Query#circle([path], area)
+
+Specs a $center or $centerSphere condition.
+
+Parameters:
+
+[path] <String>
+area <Object>
+Returns:
+
+<Query> this
+See:
+
+$center
+$centerSphere
+$geoWithin
+http://www.mongodb.org/display/DOCS/Geospatial+Indexing
+Example
+
+var area = { center: [50, 50], radius: 10, unique: true }
+query.where('loc').within().circle(area)
+// alternatively
+query.circle('loc', area);
+
+// spherical calculations
+var area = { center: [50, 50], radius: 10, unique: true, spherical: true }
+query.where('loc').within().circle(area)
+// alternatively
+query.circle('loc', area);
+New in 3.7.0
+
+
+
+Query#ne([path], val)  Specs a $ne quCond.
+pm:[path] $Sval $N  See:$ne
+1 arg? ->, mst-rcntly-passd2-where pt used.
+Query#near([path], val)
+Specs a $near or $nearSphere cond
+
+pm:[path] $S val $O
+rets:$Qu this
+See:  $near  $nearSphere   $maxDistance  http://www.mongodb.org/display/DOCS/Geospatial+Indexing
+These ops return docs sorted by dist
+
+query.where('loc').near({ center: [10, 10] });
+query.where('loc').near({ center: [10, 10], maxDistance: 5 });
+query.where('loc').near({ center: [10, 10], maxDistance: 5, spherical: true });
+query.near('loc', { center: [10, 10], maxDistance: 5 });
+
+Query#nearSphere()  DEPRECATED Specs a $nearSphere cond
+
+See: near()  $near  $nearSphere  $maxDistance
+query.where('loc').nearSphere({ center: [10, 10], maxDistance: 5 });
+Deprecated. Use query.near() instead with the spherical option set to true.
+query.where('loc').near({ center: [10, 10], spherical: true });
+
+
+
+Query#maxDistance([path], val)
+Specs a $maxDistance quCond.
+pm:[path] $Sval $N
+See:$maxDistance
+1 arg? ->, mst-rcntly-passd2-where pt used.
+

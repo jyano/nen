@@ -1,0 +1,283 @@
+// For use during development of a node.js based application:
+     will watch the files in its directory, restart node if changes detected
+  wraps your node application ,   think of it as replacing the word "node" on the command line when you run your script.
+  you can pass all the arguments you would normally pass to your app:  //  nodemon [your node app]
+
+
+//   if my app  accepted a host and port as the arguments, I would start it as so:
+//nodemon ./server.js localhost 8080
+//Any output from this script is prefixed with [nodemon],
+otherwise all output from your application, errors included,
+will be echoed out as expected.
+
+
+//If no script is given,  nodemon will test for a package.json file,
+and if found, will run the file  assoc with the main property (ref).
+
+//  You can also pass the debug flag to node through the command line as you would normally:
+
+
+//  nodemon --debug ./server.js 80
+//If you have a package.json file for your app, you can omit the main script entirely
+//and nodemon will read the package.json for the main property and use that value as the app.
+
+//  nodemon will also search for the scripts.start property in package.json (as of nodemon 1.1.x).
+
+//Also check out the FAQ or issues for nodemon.
+
+
+//                                       Automatic re-running
+//nodemon was originally written to restart hanging processes such as web servers,
+//  but now supports apps that cleanly exit. If your script exits cleanly,
+//  nodemon will continue to monitor the directory (or directories)
+//and restart the script if there are any changes.
+
+
+//  Manual restarting
+//Whilst nodemon is running, if you need to manually restart your application,
+//  instead of stopping and restart nodemon, you can simply type rs with a carriage return,
+//and nodemon will restart your process.
+
+<script>
+cf=function(){
+//  Config files  //nodemon supports local and global configuration files. These are named nodemon.json
+//and can be located in the current working directory or in your home directory.
+
+//  The specificity is as follows,
+   //  so that a command line argument will always override
+//the config file settings:
+
+//  command line arguments
+//local config
+//global config
+//A config file can take any of the command line arguments as JSON key values, for example:
+
+ob={
+    "verbose": true,
+    "ignore": ["*.test.js", "fixtures/*"],
+    "execMap": {
+    "rb": "ruby",
+        "pde": "processing --sketch={{pwd}} --run"
+}
+}
+//The above nodemon.json file might be my global config so that I have support for ruby files and processing files,
+  //  and I can simply run nodemon demo.pde and nodemon will automatically know how to run the script even though out
+//of the box support for processing scripts.
+
+
+ }
+</script>
+
+
+
+
+    Default executables
+Using the nodemon.json config file,
+you can define your own default executables using the execMap property.
+This is particularly useful if you're working with a language that isn't supported by default by nodemon.
+    To add support for nodemon to know about the .pl extension (for Perl), the nodemon.json file would add:
+{ "execMap": {"pl": "perl"}}
+//Now running the following, nodemon will know to use perl as the executable:
+    nodemon script.pl
+//It's generally recommended to use the global nodemon.json to add your own execMap options. However, if there's a common default that's missing, this can be merged in to the project so that nodemon supports it by default, by changing default.js and sending a pull request.
+
+
+
+
+//Monitoring multiple directories
+//By default nodemon monitors the current working directory.
+If you want to take control of that option, use the --watch option to add specific paths:
+  ///  nodemon --watch app --watch libs app/server.js
+//Now nodemon will only restart if there are changes in the ./app or ./libs directory. By default nodemon will traverse sub-directories, so there's no need in explicitly including sub-directories.
+
+
+//Specifying extension watch list
+//By default, nodemon looks for files with
+.js, .coffee,  .litcoffee extensions.
+If you use the --exec option and monitor app.py nodemon will monitor
+files with the extension of .py.
+However, you can specify your own list with the -e (or --ext) switch like so:
+  //  nodemon -e js,jade
+  //  Now nodemon will restart on any changes to files in the directory (or subdirectories) with the extensions .js, .jade.
+
+
+
+    //    Ignoring files
+   // By default, nodemon will only restart when a .js JavaScript file changes.
+In some cases you will want to ignore some specific files, directories or file patterns,
+to prevent nodemon from prematurely restarting your application.
+   // This can be done via the command line:
+   // nodemon --ignore lib/ --ignore tests/
+//Or specific files can be ignored:
+    nodemon --ignore lib/app.js
+    Patterns can also be ignored (but be sure to quote the arguments):
+    nodemon --ignore 'lib/*.js'
+    Note that by default, nodemon will ignore the .git, node_modules, bower_components and .sass-cache directories.
+
+
+
+
+    Delaying restarting
+    In some situations,
+you may want to wait until a number of files have changed.
+The timeout before checking for new file changes is 1 second.
+If you're uploading a number of files and it's taking some number of seconds,
+this could cause your app to restart multiple times unnecessarily.
+        To add an extra throttle, or delay restarting, use the --delay command:
+        nodemon --delay 10 server.js
+    For more precision, milliseconds can be specified. Either as a float:
+        nodemon --delay 2.5 server.js
+    Or using the time specifier (ms):
+    nodemon --delay 2500ms server.js
+    The delay figure is number of seconds (or milliseconds, if specified) to delay before restarting. So nodemon will only restart your app the given number of seconds after the last file change.
+
+        Controlling shutdown of your script
+    nodemon sends a kill signal to your application when it sees a file update.
+     If you need to clean up on shutdown inside your script you can capture
+     the kill signal and handle it yourself.
+        The following example will listen once for the SIGUSR2 signal
+        (used by nodemon to restart), run the clean up process and then kill itself for nodemon to continue control:
+    process.once('SIGUSR2', function () {        gracefulShutdown(function () {            process.kill(process.pid, 'SIGUSR2')    }) })
+    Note that the process.kill is only called once your shutdown jobs are complete. Hat tip to Benjie Gillam for writing this technique up.
+
+
+        Triggering events when nodemon state changes
+    If you want growl like notifications when nodemon restarts
+or to trigger an action when an event happens,
+then you can either require nodemon
+or simply add event actions to your nodemon.json file.
+        For example, to trigger a notification on a Mac when nodemon restarts, nodemon.json looks like this:
+{ events: {   "restart": "osascript -e 'display notification \"app restarted\" with title \"nodemon\"'" }}
+   you can bind to both states and messages.
+        Pipe output to somewhere else
+    nodemon({
+            script:'', stdout: false // important: this tells nodemon not to output to console
+}).on('readable', function() { // the `readable` event indicates that data is ready to pick up
+    this.stdout.pipe(fs.createWriteStream('output.txt'));
+    this.stderr.pipe(fs.createWriteStream('err.txt'));
+})
+
+
+
+
+
+
+
+
+/*
+
+
+nodemon doesn't work with my REPL
+
+Create an nodemon.json file with the setting:
+
+{  "restartable": false} This will leave the STDIN to your app  rather than listening for the rs command to restart.
+
+    My script arguments are being taken by nodemon
+Use the -- switch to tell nodemon to ignore all arguments after this point. So to pass -L to your script instead of nodemon, use:
+
+    $ nodemon app.js -- -L -opt2 -opt3
+    nodemon will ignore all script arguments after -- and pass them to your script.
+
+        Help! My changes aren't being detected!
+    nodemon has three potential methods it uses to look for file changes. First, it polls using the find command to search for files modified within the last second. This method works on systems with a BSD based find.
+
+        Next it tries using node's fs.watch. fs.watch will not always work however, and nodemon will try and detect if this is the case by writing a file to the tmp directory and seeing if fs.watch is triggered when it's removed. If nodemon finds that fs.watch was not triggered, it will then fall back to the third method (called legacy watch), which works by statting each file in your working directory looking for changes to the last modified time. This is the most cpu intensive method, but it may be the only option on some systems.
+
+        In certain cases, like when where you are working on a different drive than your tmp directory is on, fs.watch may give you a false positive. You can force nodemon to start using the most compatible legacy method by passing the -L switch, e.g. nodemon -L /my/odd/file.js.
+
+        nodemon tries to run two scripts
+
+        If you see nodemon trying to run two scripts, like:
+
+        9 Dec 23:52:58 - [nodemon] starting `node ./app.js fixtures/sigint.js`
+This is because the main script argument (fixtures/sigint.js in this case) wasn't found, and a package.json's main file was found. ie. to solve, double check the path to your script is correct.
+
+        What has precedence, ignore or watch?
+
+        Everything under the ignore rule has the final word. So if you ignore the node_modules directory, but watch node_modules/*.js, then all changed files will be ignored, because any changed .js file in the node_modules are ignored.
+
+     nodemon doesn't work with fedora
+
+     Fedora is looking for nodejs rather than node which is the binary that nodemon kicks off.
+
+     The solution is a simple workaround, Linux 101:
+
+     sudo ln -s /usr/bin/nodejs /usr/local/bin/node
+     Fedora and Ubuntu pakage node as nodejs, because node.dpkg is
+
+     Description-en: Amateur Packet Radio Node program The node program accepts TCP/IP and packet radio network connections and presents users with an interface that allows them to make gateway connections to remote hosts using a variety of amateur radio protocols. They make the binary is nodejs, rather than node. So long as you're not using that Packet Radio Node Program mentioned above the workaround will work.
+     Thank you @EvanCarroll
+
+     Using nodemon with forever
+
+     If you're using nodemon with forever (perhaps in a production environment), you can combine the two together. This way if the script crashes, forever restarts the script, and if there are file changes, nodemon restarts your script. For more detail, see issue 30.
+
+     To achieve this you need to add the following on the call to forever:
+
+     Use forever's -c nodemon option to tell forever to run nodemon instead of node.
+     Include the nodemon --exitcrash flag to ensure nodemon exits if the script crashes (or exits unexpectedly).
+     Tell forever to use SIGTERM instead of SIGKILL when requesting nodemon to stop. This ensures that nodemon can stop the watched node process cleanly.
+     Optionally add the --uid parameter, adding a unique name for your process. In the example, the uid is set to foo.
+     forever start --uid foo --killSignal=SIGTERM -c nodemon --exitcrash server.js
+     To test this, you can kill the server.js process and forever will restart it. If you touch server.js nodemon will restart it.
+
+     To stop the process monitored by forever and nodemon, simply call the following, using the uid we assigned above (foo):
+
+     forever stop foo
+     This will stop both nodemon and the node process it was monitoring.
+
+     Note that I would not recommend using nodemon in a production environment - but that's because I wouldn't want it restart without my explicit instruction.
+
+     What does "verbose" give me?
+
+     The --verbose (or -V) puts nodemon in verbose mode which adds some detail to starting and restarting.
+
+     Additional restart information:
+
+     Which nodemon configs are loaded (local and global if found)
+     Which ignore rules are being applied
+     Which file extensions are being watch
+     The process ID of your application (the child pid)
+     For example:
+
+     14 Apr 15:24:58 - [nodemon] v1.0.17
+     14 Apr 15:24:58 - [nodemon] reading config /Users/remy/Sites/jsbin-private/nodemon.json
+     14 Apr 15:24:58 - [nodemon] to restart at any time, enter `rs`
+     14 Apr 15:24:58 - [nodemon] ignoring: /Users/remy/Sites/jsbin-private/.git/%%/%node_modules/%%/node_modules
+        14 Apr 15:24:58 - [nodemon] watching: /Users/remy/Sites/jsbin/view/%%/%/Users/remy/Sites/jsbin/lib/%%/%
+../json/*.json config.dev.json
+        14 Apr 15:24:58 - [nodemon] watching extensions: json,js,html
+        14 Apr 15:24:58 - [nodemon] starting `node run.js`
+14 Apr 15:24:58 - [nodemon] child pid: 9292
+        When nodemon detects a change, the following addition information is shown:
+
+            Which file(s) triggered the check
+        Which (if any) rules the file matched to cause a subsequent restart
+        How many rules were matched and out of those rules, how many cause a restart
+        A list of all the files that successfully caused a restart
+        For example, on lib/app.js being changed:
+
+            14 Apr 15:25:56 - [nodemon] files triggering change check: ../jsbin/lib/app.js
+        14 Apr 15:25:56 - [nodemon] matched rule: %%/Users/remy/Sites/jsbin/lib/%%
+
+        14 Apr 15:25:56 - [nodemon] changes after filters (before/after): 1/1
+        14 Apr 15:25:56 - [nodemon] restarting due to changes...
+        14 Apr 15:25:56 - [nodemon] ../jsbin/lib/app.js
+
+        14 Apr 15:25:56 - [nodemon] starting `node run.js`
+14 Apr 15:25:56 - [nodemon] child pid: 9556
+
+
+        My .nodemonignore is being ignored
+
+        The new nodemon.json superceeds the .nodemonignore file, so if you have both, the .nodemonignore is not used at all.
+
+            Note that if you have a nodemon.json in your $HOME path, then this will also superceed the old ignore file.
+
+            nodemon does nothing
+
+        On Ubuntu globally installed node applications have been found to have no output when they're run. This seems to be an issue with node not being correctly installed (possibly linked to the binary having to be called nodejs).
+
+        The solution (that's worked in the past) is to install nvm first and using it to install node, rather than using apt-get (or similar tools) to install node directly.
+*/

@@ -1,0 +1,111 @@
+<!DOCTYPE html><html><head lang="en"><meta charset="UTF-8"><title>chat with socket io and node</title>
+    <style>
+        #ch{  height:200px;  }
+        #ct {  display: none;  }
+        #chCt {  float:left;  border: 1px red solid;  }
+    </style>
+</head>
+<body>
+<div id="nCt"><p>Enter name:</p>
+    <p id="nZ"></p>
+    <form id="nF">
+        <input size="35" id="nn">
+        <input type="submit">
+    </form>
+</div>
+<div id='ct'>
+
+    <div id='chCt'>
+        <div id='ch'></div>
+        <form id='send'>
+            <input size="35" id="ms">
+            <input type="submit">
+        </form>
+    </div>
+
+
+    <div id='users'>
+    </div>
+
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+
+<script src="/socket.io/socket.io.js"></script><script>
+
+    $(function(){
+        lib()
+        els()
+        k=$sK(io.connect())
+        nF.sm_(function(){k.em('new',
+                nBox.v_(),
+                function(d){//data is the T/F set on server!
+                    if(d){nCt.hd(); ct.sh()}
+                    else {nZ.h('name taken')}
+                })
+        })
+        f.sm_(function(){k.em('send',mBox.v_())})
+        k.on('send',function(d){$l('d:'+d); chat.A_(d)})
+        k.on('nns', function(d){var str=''
+            d.forEach(function(d){str+=(d.i+'\n')})
+            nns.h(str)})
+
+        k.on('disconnect', function(){
+            if(!k.nn){return}
+            nn.splice(NN.indexOf(nn),1)
+        })
+    })
+
+    function lib(){
+        $sK=function(k){
+            k.em= k.emit
+            return k
+        }
+        $l=function (a) {
+            console.log(a)
+        }
+        $.fn.sm = $.fn.submit
+        $.fn.sm_ = function(fn){
+            return this.submit(function(e){
+                _pD(e)
+                fn(e)
+            })
+
+        }
+        $.fn.A = $.fn.append
+        $.fn.A_ = function(a){
+            return this.append(a + '</br>')
+        }
+        $.fn.v = $.fn.val
+        $.fn.v_ =function(){
+            var v=this.val()
+            this.val('')
+            return v
+        }
+        $.fn.sh= $.fn.show
+        $.fn.hd= $.fn.hide
+        $.fn.h= $.fn.html
+        _pD=function(e){
+            e.preventDefault()
+        }
+    }
+    function els(){
+
+        nZ = $('#nZ')
+
+        nCt=$('#nCt')
+        nBox = $('#nn')
+
+        nF = $('#nF')
+
+        f = $('#send')
+
+        mBox = $('#ms')
+    chat = $('#chat')
+    nickWrap = $('#nCt')
+    ct = $('#ct')
+}
+
+
+</script>
+</body>
+</html>
